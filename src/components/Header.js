@@ -7,6 +7,7 @@ import {
   Menu,
   MenuItem,
   Typography,
+  Button,
 } from "@mui/material";
 import NotificationsIcon from "@mui/icons-material/Notifications";
 import { useNavigate } from "react-router-dom";
@@ -35,6 +36,11 @@ function Header({ onNotificationClick, notificationCount }) {
 
   const handleClose = () => {
     setAnchorEl(null);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    navigate("/login"); 
   };
 
   return (
@@ -69,6 +75,10 @@ function Header({ onNotificationClick, notificationCount }) {
             <MenuItem onClick={handleClose}>No new notifications</MenuItem>
           )}
         </Menu>
+
+        <Button color="inherit" onClick={handleLogout} sx={{ ml: 2 }}>
+          Logout
+        </Button>
       </Toolbar>
     </AppBar>
   );

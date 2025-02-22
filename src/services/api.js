@@ -32,3 +32,11 @@ export const makePayment = async (paymentData) =>
 
 export const fetchNotifications = async () =>
   axios.get(`${API_URL}/notifications`, getAuthHeaders());
+
+export const uploadCustomers = async (formData) => {
+  return await axios.post(`${API_URL}/upload-customers`, formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+};

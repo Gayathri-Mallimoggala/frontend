@@ -23,6 +23,7 @@ import {
   updateCustomer,
   deleteCustomer,
   makePayment,
+  uploadCustomers
 } from "../services/api";
 
 function Customers() {
@@ -37,6 +38,7 @@ function Customers() {
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState("");
   const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [file, setFile] = useState(null);
   const [notification, setNotification] = useState({
     open: false,
     message: "",
@@ -53,6 +55,30 @@ function Customers() {
       setCustomers(response.data);
     } catch (error) {
       console.error("Error fetching customers:", error);
+    }
+  };
+
+  const handleFileUpload = async (e) => {
+    const uploadedFile = e.target.files[0];
+    setFile(uploadedFile);
+  };
+
+  const handleUploadCustomers = async () => {
+    if (!file) {
+      setNotification({ open: true, message: "Please select a file to upload.", severity: "warning" });
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      await uploadCustomers(formData);
+      fetchCustomers();
+      setNotification({ open: true, message: "Customers uploaded successfully!", severity: "success" });
+    } catch (error) {
+      console.error("Error uploading customers:", error);
+      setNotification({ open: true, message: "Failed to upload customers!", severity: "error" });
     }
   };
 
@@ -169,6 +195,13 @@ function Customers() {
         <Typography variant="h4" align="center" gutterBottom>
           Customers
         </Typography>
+
+        <Box sx={{ display: "flex", gap: 2, mb: 2 }}>
+          <input type="file" onChange={handleFileUpload} />
+          <Button variant="contained" color="secondary" onClick={handleUploadCustomers}>
+            Upload Customers
+          </Button>
+        </Box>
 
         <Box sx={{ display: "flex", gap: 2, mb: 2 }}>
           <TextField

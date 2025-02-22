@@ -15,8 +15,7 @@ function Footer() {
       }}
     >
       <Typography variant="body2">
-        © {new Date().getFullYear()} SmartCollect: Real-Time Payment &
-        Notification Management System
+        © {new Date().getFullYear()} Customer Management
       </Typography>
     </Box>
   );
