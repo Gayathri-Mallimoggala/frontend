@@ -1,14 +1,14 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-
-const API_URL = "http://localhost:5000";
+import { TextField, Button, Container, Typography, Box } from "@mui/material";
+import { registerUser } from "../services/api";
 
 function Register() {
-  const [formData, setFormData] = useState({ name: "", email: "", password: "" });
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    password: "",
+  });
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -18,7 +18,7 @@ function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post(`${API_URL}/register`, formData);
+      await registerUser(formData);
       navigate("/login");
     } catch (error) {
       console.error("Registration failed", error);
@@ -26,17 +26,62 @@ function Register() {
   };
 
   return (
-    <Card>
-      <CardContent>
-        <h2 className="text-xl font-bold mb-4">Register</h2>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <Input name="name" placeholder="Name" value={formData.name} onChange={handleChange} required />
-          <Input type="email" name="email" placeholder="Email" value={formData.email} onChange={handleChange} required />
-          <Input type="password" name="password" placeholder="Password" value={formData.password} onChange={handleChange} required />
-          <Button type="submit" className="w-full">Register</Button>
+    <Container maxWidth="sm">
+      <Box
+        sx={{
+          mt: 8,
+          p: 4,
+          boxShadow: 3,
+          borderRadius: 2,
+          bgcolor: "background.paper",
+        }}
+      >
+        <Typography variant="h4" align="center" gutterBottom>
+          User Registeration Form
+        </Typography>
+        <form onSubmit={handleSubmit}>
+          <TextField
+            fullWidth
+            margin="normal"
+            label="Name"
+            name="name"
+            value={formData.name}
+            onChange={handleChange}
+            required
+          />
+          <TextField
+            fullWidth
+            margin="normal"
+            label="Email"
+            type="email"
+            name="email"
+            value={formData.email}
+            onChange={handleChange}
+            required
+          />
+          <TextField
+            fullWidth
+            margin="normal"
+            label="Password"
+            type="password"
+            name="password"
+            value={formData.password}
+            onChange={handleChange}
+            required
+            autoComplete="new-password"
+          />
+          <Button
+            fullWidth
+            variant="contained"
+            color="primary"
+            type="submit"
+            sx={{ mt: 2 }}
+          >
+            Register
+          </Button>
         </form>
-      </CardContent>
-    </Card>
+      </Box>
+    </Container>
   );
 }
 

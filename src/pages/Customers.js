@@ -1,80 +1,318 @@
-import React, { useState, useEffect } from "react";
-import axios from "axios";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Table } from "@/components/ui/table";
-
-const API_URL = "http://localhost:5000";
+import React, { useEffect, useState } from "react";
+import {
+  Container,
+  Table,
+  TableHead,
+  TableRow,
+  TableCell,
+  TableBody,
+  Button,
+  TextField,
+  Box,
+  Typography,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Snackbar,
+  Alert,
+} from "@mui/material";
+import {
+  getCustomers,
+  addCustomer,
+  updateCustomer,
+  deleteCustomer,
+  makePayment,
+} from "../services/api";
 
 function Customers() {
   const [customers, setCustomers] = useState([]);
-  const [formData, setFormData] = useState({ name: "", contact: "" });
-  const [editingCustomer, setEditingCustomer] = useState(null);
+  const [newCustomer, setNewCustomer] = useState({
+    name: "",
+    contact: "",
+    outstandingAmount: "",
+    dueDate: "",
+    paymentStatus: "",
+  });
+  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
+  const [paymentAmount, setPaymentAmount] = useState("");
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [notification, setNotification] = useState({
+    open: false,
+    message: "",
+    severity: "success",
+  });
 
   useEffect(() => {
     fetchCustomers();
   }, []);
 
   const fetchCustomers = async () => {
-    const { data } = await axios.get(`${API_URL}/customers`);
-    setCustomers(data);
-  };
-
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (editingCustomer) {
-      await axios.put(`${API_URL}/customers/${editingCustomer.id}`, formData);
-    } else {
-      await axios.post(`${API_URL}/customers`, formData);
+    try {
+      const response = await getCustomers();
+      setCustomers(response.data);
+    } catch (error) {
+      console.error("Error fetching customers:", error);
     }
-    setFormData({ name: "", contact: "" });
-    setEditingCustomer(null);
-    fetchCustomers();
   };
 
-  const handleEdit = (customer) => {
-    setEditingCustomer(customer);
-    setFormData({ name: customer.name, contact: customer.contact });
+  const handleAddCustomer = async () => {
+    if (!newCustomer.name.trim()) return;
+    try {
+      await addCustomer(newCustomer);
+      setNewCustomer({
+        name: "",
+        contact: "",
+        outstandingAmount: "",
+        dueDate: "",
+        paymentStatus: "",
+      });
+      fetchCustomers();
+      setNotification({
+        open: true,
+        message: "Customer added successfully!",
+        severity: "success",
+      });
+    } catch (error) {
+      console.error("Error adding customer:", error);
+      setNotification({
+        open: true,
+        message: "Failed to add customer!",
+        severity: "error",
+      });
+    }
   };
 
-  const handleDelete = async (id) => {
-    await axios.delete(`${API_URL}/customers/${id}`);
-    fetchCustomers();
+  const handleUpdateCustomer = async (id, name) => {
+    try {
+      await updateCustomer(id, { name });
+      fetchCustomers();
+      setNotification({
+        open: true,
+        message: "Customer updated successfully!",
+        severity: "success",
+      });
+    } catch (error) {
+      console.error("Error updating customer:", error);
+      setNotification({
+        open: true,
+        message: "Failed to update customer!",
+        severity: "error",
+      });
+    }
+  };
+
+  const handleDeleteCustomer = async (id) => {
+    try {
+      await deleteCustomer(id);
+      fetchCustomers();
+      setNotification({
+        open: true,
+        message: "Customer deleted successfully!",
+        severity: "success",
+      });
+    } catch (error) {
+      console.error("Error deleting customer:", error);
+      setNotification({
+        open: true,
+        message: "Failed to delete customer!",
+        severity: "error",
+      });
+    }
+  };
+
+  const openPaymentDialog = (customer) => {
+    setSelectedCustomer(customer);
+    setPaymentAmount("");
+    setPaymentDialogOpen(true);
+  };
+
+  const handleMakePayment = async () => {
+    if (!paymentAmount || paymentAmount <= 0) {
+      alert("Enter a valid amount!");
+      return;
+    }
+
+    try {
+      await makePayment({
+        customerId: selectedCustomer.id,
+        amount: parseFloat(paymentAmount),
+      });
+      setPaymentDialogOpen(false);
+      fetchCustomers();
+      setNotification({
+        open: true,
+        message: "Payment made successfully!",
+        severity: "success",
+      });
+    } catch (error) {
+      console.error("Error making payment:", error);
+      setNotification({
+        open: true,
+        message: "Failed to make payment!",
+        severity: "error",
+      });
+    }
   };
 
   return (
-    <Card>
-      <CardContent>
-        <h2>Customers</h2>
-        <form onSubmit={handleSubmit}>
-          <Input name="name" placeholder="Name" value={formData.name} onChange={handleChange} required />
-          <Input name="contact" placeholder="Contact" value={formData.contact} onChange={handleChange} required />
-          <Button type="submit">{editingCustomer ? "Update" : "Add"} Customer</Button>
-        </form>
+    <Container>
+      <Box
+        sx={{
+          mt: 4,
+          p: 3,
+          boxShadow: 3,
+          borderRadius: 2,
+          bgcolor: "background.paper",
+        }}
+      >
+        <Typography variant="h4" align="center" gutterBottom>
+          Customers
+        </Typography>
+
+        <Box sx={{ display: "flex", gap: 2, mb: 2 }}>
+          <TextField
+            label="Name"
+            value={newCustomer.name}
+            onChange={(e) =>
+              setNewCustomer({ ...newCustomer, name: e.target.value })
+            }
+            required
+          />
+          <TextField
+            label="Contact"
+            value={newCustomer.contact}
+            onChange={(e) =>
+              setNewCustomer({ ...newCustomer, contact: e.target.value })
+            }
+            required
+          />
+          <TextField
+            label="Outstanding Amount"
+            type="number"
+            value={newCustomer.outstandingAmount}
+            onChange={(e) =>
+              setNewCustomer({
+                ...newCustomer,
+                outstandingAmount: e.target.value,
+              })
+            }
+            required
+          />
+          <TextField
+            type="date"
+            value={newCustomer.dueDate}
+            onChange={(e) =>
+              setNewCustomer({ ...newCustomer, dueDate: e.target.value })
+            }
+            required
+          />
+          <TextField
+            label="Payment Status"
+            value={newCustomer.paymentStatus}
+            onChange={(e) =>
+              setNewCustomer({ ...newCustomer, paymentStatus: e.target.value })
+            }
+            required
+          />
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleAddCustomer}
+          >
+            Add Customer
+          </Button>
+        </Box>
+
         <Table>
-          <thead>
-            <tr><th>Name</th><th>Contact</th><th>Actions</th></tr>
-          </thead>
-          <tbody>
-            {customers.map((c) => (
-              <tr key={c.id}>
-                <td>{c.name}</td>
-                <td>{c.contact}</td>
-                <td>
-                  <Button onClick={() => handleEdit(c)}>Edit</Button>
-                  <Button onClick={() => handleDelete(c.id)}>Delete</Button>
-                </td>
-              </tr>
+          <TableHead>
+            <TableRow>
+              <TableCell>ID</TableCell>
+              <TableCell>Name</TableCell>
+              <TableCell>Contact</TableCell>
+              <TableCell>Outstanding Amount</TableCell>
+              <TableCell>Due Date</TableCell>
+              <TableCell>Payment Status</TableCell>
+              <TableCell>Actions</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {customers.map((customer) => (
+              <TableRow key={customer.id}>
+                <TableCell>{customer.id}</TableCell>
+                <TableCell>
+                  <TextField
+                    value={customer.name}
+                    onChange={(e) =>
+                      handleUpdateCustomer(customer.id, e.target.value)
+                    }
+                  />
+                </TableCell>
+                <TableCell>{customer.contact}</TableCell>
+                <TableCell>{customer.outstandingAmount}</TableCell>
+                <TableCell>{customer.dueDate}</TableCell>
+                <TableCell>{customer.paymentStatus}</TableCell>
+                <TableCell>
+                  {customer.paymentStatus !== "Completed" && (
+                    <Button
+                      color="primary"
+                      onClick={() => openPaymentDialog(customer)}
+                    >
+                      Make Payment
+                    </Button>
+                  )}
+                  <Button
+                    color="error"
+                    onClick={() => handleDeleteCustomer(customer.id)}
+                  >
+                    Delete
+                  </Button>
+                </TableCell>
+              </TableRow>
             ))}
-          </tbody>
+          </TableBody>
         </Table>
-      </CardContent>
-    </Card>
+      </Box>
+
+      <Dialog
+        open={paymentDialogOpen}
+        onClose={() => setPaymentDialogOpen(false)}
+      >
+        <DialogTitle>Make Payment</DialogTitle>
+        <DialogContent>
+          <TextField
+            label="Amount"
+            type="number"
+            fullWidth
+            value={paymentAmount}
+            onChange={(e) => setPaymentAmount(e.target.value)}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setPaymentDialogOpen(false)}>Cancel</Button>
+          <Button
+            color="primary"
+            variant="contained"
+            onClick={handleMakePayment}
+          >
+            Pay
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Snackbar
+        open={notification.open}
+        autoHideDuration={3000}
+        onClose={() => setNotification({ ...notification, open: false })}
+      >
+        <Alert
+          severity={notification.severity}
+          onClose={() => setNotification({ ...notification, open: false })}
+        >
+          {notification.message}
+        </Alert>
+      </Snackbar>
+    </Container>
   );
 }
 
